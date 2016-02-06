@@ -59,7 +59,8 @@ main =
 model =
   { count = 0
   , prevEventTime = StartTime.startTime
-  , eventTime = StartTime.startTime }
+  , eventTime = StartTime.startTime
+  }
 
 
 view address model =
