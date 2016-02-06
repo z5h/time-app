@@ -1,4 +1,4 @@
-module StartApp ( start, Config, App ) where
+module TimeApp ( start, Config, App ) where
 {-| This module helps you start your application in a typical Elm workflow.
 It assumes you are following [the Elm Architecture][arch] and using
 [elm-effects][]. From there it will wire everything up for you!
@@ -17,6 +17,7 @@ works!**
 import Html exposing (Html)
 import Task
 import Effects exposing (Effects, Never)
+import Time exposing (Time)
 
 
 {-| The configuration of an app follows the basic model / update / view pattern
@@ -34,7 +35,7 @@ you can pipe into your app as one of the `inputs`.
 -}
 type alias Config model action =
     { init : (model, Effects action)
-    , update : action -> model -> (model, Effects action)
+    , update : action -> Time -> model -> (model, Effects action)
     , view : Signal.Address action -> model -> Html
     , inputs : List (Signal.Signal action)
     }
@@ -89,24 +90,28 @@ start config =
         address =
             Signal.forwardTo messages.address singleton
 
-        -- updateStep : action -> (model, Effects action) -> (model, Effects action)
-        updateStep action (oldModel, accumulatedEffects) =
+        -- updateStep : (action, Time) (model, Effects action) -> (model, Effects action)
+        updateStep (action, time) (oldModel, accumulatedEffects) =
             let
-                (newModel, additionalEffects) = config.update action oldModel
+                (newModel, additionalEffects) = config.update action time oldModel
             in
                 (newModel, Effects.batch [accumulatedEffects, additionalEffects])
 
-        -- update : List action -> (model, Effects action) -> (model, Effects action)
-        update actions (model, _) =
-            List.foldl updateStep (model, Effects.none) actions
+        -- update : (Time, (List action)) -> (model, Effects action) -> (model, Effects action)
+        update (time, actions) (model, _) =
+            List.foldl updateStep (model, Effects.none) (List.map (\a -> (a, time)) actions)
 
         -- inputs : Signal (List action)
         inputs =
             Signal.mergeMany (messages.signal :: List.map (Signal.map singleton) config.inputs)
 
+        -- inputsWithTime : Signal (Time, (List action))
+        inputsWithTime =
+          Time.timestamp inputs
+
         -- effectsAndModel : Signal (model, Effects action)
         effectsAndModel =
-            Signal.foldp update config.init inputs
+            Signal.foldp update config.init inputsWithTime
 
         model =
             Signal.map fst effectsAndModel
