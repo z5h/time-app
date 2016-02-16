@@ -1,5 +1,5 @@
 {
-    "version": "1.0.0",
+    "version": "1.0.1",
     "summary": "Like evancz/start-app, but with `update : action -> Time -> model -> model`.",
     "repository": "https://github.com/z5h/time-app.git",
     "license": "BSD3",
