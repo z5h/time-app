@@ -35,12 +35,6 @@ as opposed to StartApp's:
 update : action -> model -> (model, Effects action)
 ```
 
-The final change is the addition of:  
-```elm
-StartTime.startTime
-```
-which returns the Time the app was started.
-
 # Example
 
 
@@ -50,36 +44,39 @@ import Html exposing (div, button, text)
 import Html.Events exposing (onClick)
 import TimeApp.Simple as TimeApp
 import StartTime
-
+import Time exposing (Time)
 
 main =
   TimeApp.start { model = model, view = view, update = update }
 
-
+model : {count : Int, prevEventTime : Maybe Time, eventTime : Maybe Time}
 model =
   { count = 0
-  , prevEventTime = StartTime.startTime
-  , eventTime = StartTime.startTime
+  , prevEventTime = Nothing
+  , eventTime = Nothing
   }
-
 
 view address model =
   let
-    secondsAgo = toString <| (model.eventTime - model.prevEventTime ) / 1000.0
+    timeBetweenUpdatesMessage =
+      case (model.prevEventTime, model.eventTime) of
+        (Just prevTime, Just time) ->
+          ((time - prevTime ) / 1000.0 |> toString) ++ " seconds between updates."
+        _ -> ""
   in
     div []
       [ button [ onClick address Decrement ] [ text "-" ]
-      , div [] [ text <| (toString model.count) ++ ". Previously changed " ++ secondsAgo ++ " seconds ago" ]
+      , div [] [ text <| (toString model.count)]
+      , div [] [ text <| timeBetweenUpdatesMessage ]
       , button [ onClick address Increment ] [ text "+" ]
       , div [] [ ]
       ]
 
-
 type Action = Increment | Decrement
-
 
 update action time model =
   case action of
-    Increment -> {count = model.count + 1, eventTime = time, prevEventTime = model.eventTime}
-    Decrement -> {count = model.count - 1, eventTime = time, prevEventTime = model.eventTime}
+    Increment -> {count = model.count + 1, eventTime = Just time, prevEventTime = model.eventTime}
+    Decrement -> {count = model.count - 1, eventTime = Just time, prevEventTime = model.eventTime}
+
 ```
